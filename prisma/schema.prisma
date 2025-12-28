@@ -15,59 +15,62 @@ datasource db {
 
 model User {
   id        String   @id @default(uuid())
-  clerkId   String   @unique
   email     String   @unique
   name      String?
-  role      String   @default("USER") // USER, ADMIN
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
   claims    Claim[]
+  createdAt DateTime @default(now())
 }
 
 model Claim {
-  id          String               @id @default(uuid())
-  userId      String
-  user        User                 @relation(fields: [userId], references: [id])
-  type        String // e.g., "Medical", "Auto"
-  description String
-  amount      Float
-  status      ClaimStatus          @default(SUBMITTED)
-  eligibility Eligibility          @default(UNKNOWN)
-  createdAt   DateTime             @default(now())
-  updatedAt   DateTime             @updatedAt
-  documents   Document[]
-  history     ClaimStatusHistory[]
+  id         String      @id @default(uuid())
+  userId     String
+  clientName String
+  vehicleReg String
+  lenderName String?
+  status     ClaimStatus @default(NEW)
+
+  aiSummary       String?
+  eligibility     Eligibility?
+  aiExtractedData Json?
+
+  documents     Document[]
+  statusHistory ClaimStatusHistory[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
 }
 
 model Document {
-  id        String   @id @default(uuid())
-  claimId   String
-  claim     Claim    @relation(fields: [claimId], references: [id])
-  url       String
-  name      String
-  type      String // e.g., "application/pdf"
-  createdAt DateTime @default(now())
+  id            String   @id @default(uuid())
+  claimId       String
+  fileName      String
+  s3Key         String
+  mimeType      String
+  extractedData Json?
+  createdAt     DateTime @default(now())
+  claim         Claim    @relation(fields: [claimId], references: [id])
 }
 
 model ClaimStatusHistory {
-  id        String      @id @default(uuid())
+  id        String       @id @default(uuid())
   claimId   String
-  claim     Claim       @relation(fields: [claimId], references: [id])
-  status    ClaimStatus
-  changedAt DateTime    @default(now())
-  remarks   String?
+  from      ClaimStatus?
+  to        ClaimStatus
+  changedAt DateTime     @default(now())
+  claim     Claim        @relation(fields: [claimId], references: [id])
 }
 
 enum ClaimStatus {
+  NEW
+  REVIEW
   SUBMITTED
-  UNDER_REVIEW
   APPROVED
   REJECTED
 }
 
 enum Eligibility {
-  UNKNOWN
-  ELIGIBLE
-  NOT_ELIGIBLE
+  LIKELY_VALID
   NEEDS_REVIEW
+  LIKELY_INVALID
 }
